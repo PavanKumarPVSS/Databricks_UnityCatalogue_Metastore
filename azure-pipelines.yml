@@ -8,7 +8,7 @@ variables:
     value: '$(System.DefaultWorkingDirectory)'
   - name: azureSubscription
     value: 'terraformdeployement'
-  - group: 'TFstate-variables -Databricks_deployment'
+  - group: 'TFState'
 
 stages:
   - stage: Validate
@@ -26,10 +26,10 @@ stages:
               inlineScript: |
                 cd $(workingDirectory)
                 terraform init `
-                  -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
-                  -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
-                  -backend-config="container_name=$(tfstate_container_name)" `
-                  -backend-config="key=$(tfstate_key)"
+                  -backend-config="resource_group_name=$(TFStateResourceGroup)" `
+                  -backend-config="storage_account_name=$(TFStateStorageAccount)" `
+                  -backend-config="container_name=$(TFStateContainer)" `
+                  -backend-config="key=$(TFStatekey)"
 
           - task: AzureCLI@2
             displayName: 'Terraform Validate'
@@ -41,76 +41,9 @@ stages:
                 cd $(workingDirectory)
                 terraform validate
 
-  - stage: Import
-    displayName: 'Import Existing Resources'
-    dependsOn: Validate
-    jobs:
-      - job: Import
-        displayName: 'Import Existing Azure Resources'
-        steps:
-          - task: AzureCLI@2
-            displayName: 'Terraform Init'
-            inputs:
-              azureSubscription: '$(azureSubscription)'
-              scriptType: 'ps'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                cd $(workingDirectory)
-                terraform init `
-                  -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
-                  -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
-                  -backend-config="container_name=$(tfstate_container_name)" `
-                  -backend-config="key=$(tfstate_key)"
-
-          - task: AzureCLI@2
-            displayName: 'Import Existing Resources'
-            inputs:
-              azureSubscription: '$(azureSubscription)'
-              scriptType: 'ps'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                cd $(workingDirectory)
-                
-                $ErrorActionPreference = 'Continue'
-                
-                Write-Host "Importing Resource Group..." -ForegroundColor Yellow
-                terraform import 'module.resource_group.azurerm_resource_group.rg_testing' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod'
-                
-                Write-Host "Importing Virtual Network..." -ForegroundColor Yellow
-                terraform import 'module.vnet.azurerm_virtual_network.test_vnet' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/virtualNetworks/vnet-databricks'
-                
-                Write-Host "Importing Network Security Groups..." -ForegroundColor Yellow
-                terraform import 'module.vnet.azurerm_network_security_group.databricks_public' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/networkSecurityGroups/vnet-databricks-databricks-public-nsg'
-                terraform import 'module.vnet.azurerm_network_security_group.databricks_private' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/networkSecurityGroups/vnet-databricks-databricks-private-nsg'
-                
-                Write-Host "Importing Subnets..." -ForegroundColor Yellow
-                terraform import 'module.vnet.azurerm_subnet.databricks_public' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/virtualNetworks/vnet-databricks/subnets/databricks-public-subnet'
-                terraform import 'module.vnet.azurerm_subnet.databricks_private' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/virtualNetworks/vnet-databricks/subnets/databricks-private-subnet'
-                
-                Write-Host "Importing Subnet NSG Associations..." -ForegroundColor Yellow
-                terraform import 'module.vnet.azurerm_subnet_network_security_group_association.public' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/virtualNetworks/vnet-databricks/subnets/databricks-public-subnet|/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/networkSecurityGroups/vnet-databricks-databricks-public-nsg'
-                terraform import 'module.vnet.azurerm_subnet_network_security_group_association.private' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/virtualNetworks/vnet-databricks/subnets/databricks-private-subnet|/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Network/networkSecurityGroups/vnet-databricks-databricks-private-nsg'
-                
-                Write-Host "Importing Storage Account..." -ForegroundColor Yellow
-                terraform import 'module.storage_account.azurerm_storage_account.storage' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Storage/storageAccounts/stdbprod20260210'
-                
-                Write-Host "Importing Storage Containers..." -ForegroundColor Yellow
-                terraform import 'module.storage_account.azurerm_storage_container.containers["data"]' 'https://stdbprod20260210.blob.core.windows.net/data'
-                terraform import 'module.storage_account.azurerm_storage_container.containers["logs"]' 'https://stdbprod20260210.blob.core.windows.net/logs'
-                
-                Write-Host "Importing Databricks Workspace..." -ForegroundColor Yellow
-                terraform import 'module.databricks.azurerm_databricks_workspace.databricks_workspace_testing' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Databricks/workspaces/dbw-prod-001'
-                
-                Write-Host "Importing Unity Catalog Resources..." -ForegroundColor Yellow
-                terraform import 'module.unity_catalog.azurerm_databricks_access_connector.unity' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Databricks/accessConnectors/dbw-unity-access-connector'
-                terraform import 'module.unity_catalog.azurerm_storage_account.unity_catalog' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Storage/storageAccounts/stunitycatalog001'
-                terraform import 'module.unity_catalog.azurerm_storage_container.unity_catalog' 'https://stunitycatalog001.blob.core.windows.net/unity-catalog'
-                
-                Write-Host "Import completed - All existing resources imported" -ForegroundColor Green
-
   - stage: Plan
     displayName: 'Terraform Plan'
-    dependsOn: Import
+    dependsOn: Validate
     jobs:
       - job: Plan
         displayName: 'Plan Infrastructure Changes'
@@ -124,10 +57,10 @@ stages:
               inlineScript: |
                 cd $(workingDirectory)
                 terraform init `
-                  -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
-                  -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
-                  -backend-config="container_name=$(tfstate_container_name)" `
-                  -backend-config="key=$(tfstate_key)"
+                  -backend-config="resource_group_name=$(TFStateResourceGroup)" `
+                  -backend-config="storage_account_name=$(TFStateStorageAccount)" `
+                  -backend-config="container_name=$(TFStateContainer)" `
+                  -backend-config="key=$(TFStatekey)"
 
           - task: AzureCLI@2
             displayName: 'Terraform Plan'
@@ -174,10 +107,10 @@ stages:
                     inlineScript: |
                       cd $(workingDirectory)
                       terraform init `
-                        -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
-                        -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
-                        -backend-config="container_name=$(tfstate_container_name)" `
-                        -backend-config="key=$(tfstate_key)"
+                        -backend-config="resource_group_name=$(TFStateResourceGroup)" `
+                        -backend-config="storage_account_name=$(TFStateStorageAccount)" `
+                        -backend-config="container_name=$(TFStateContainer)" `
+                        -backend-config="key=$(TFStatekey)"
 
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply'

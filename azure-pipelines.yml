@@ -7,7 +7,7 @@ variables:
   - name: workingDirectory
     value: '$(System.DefaultWorkingDirectory)'
   - name: azureSubscription
-    value: 'Azure-Service-Connection'
+    value: 'terraformdeployement'
   - group: 'TFstate-variables -Databricks_deployment'
 
 stages:

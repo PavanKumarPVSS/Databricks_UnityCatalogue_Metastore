@@ -7,6 +7,12 @@ variable "location" {
   type        = string
 }
 
+variable "environment" {
+  description = "Environment name (dev, test, prod)"
+  type        = string
+  default     = "dev"
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
@@ -254,4 +260,9 @@ variable "unity_catalog_container_name" {
   description = "Name of the storage container for Unity Catalog"
   type        = string
   default     = "unity-catalog"
+}
+
+variable "workspace_url" {
+  description = "Databricks workspace URL"
+  type        = string
 }

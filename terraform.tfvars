@@ -1,7 +1,8 @@
 # ========================================
 # General Configuration
 # ========================================
-location = "Canada Central"
+location    = "Canada Central"
+environment = "prod"
 
 tags = {
   Environment = "Development"

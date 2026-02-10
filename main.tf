@@ -102,3 +102,17 @@ module "unity_catalog" {
 
   depends_on = [module.resource_group, module.databricks]
 }
+
+module "databricks_platform" {
+  source = "./databricks_platform"
+
+  workspace_url = module.databricks.workspace_url
+  workspace_id  = module.databricks.workspace_id
+
+  access_connector_id  = module.unity_catalog.access_connector_id
+  storage_account_name = module.unity_catalog.storage_account_name
+  container_name       = module.unity_catalog.container_name
+
+  location    = var.location
+  environment = var.environment
+}

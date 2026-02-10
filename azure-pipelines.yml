@@ -41,9 +41,51 @@ stages:
                 cd $(workingDirectory)
                 terraform validate
 
+  - stage: Import
+    displayName: 'Import Existing Resources'
+    dependsOn: Validate
+    jobs:
+      - job: Import
+        displayName: 'Import Existing Azure Resources'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'ps'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd $(workingDirectory)
+                terraform init `
+                  -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
+                  -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
+                  -backend-config="container_name=$(tfstate_container_name)" `
+                  -backend-config="key=$(tfstate_key)"
+
+          - task: AzureCLI@2
+            displayName: 'Import Existing Resources'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'ps'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd $(workingDirectory)
+                
+                $ErrorActionPreference = 'Continue'
+                
+                terraform import 'module.resource_group.azurerm_resource_group.rg_testing' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod'
+                
+                terraform import 'module.unity_catalog.azurerm_databricks_access_connector.unity' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Databricks/accessConnectors/dbw-unity-access-connector'
+                
+                terraform import 'module.unity_catalog.azurerm_storage_account.unity_catalog' '/subscriptions/752b79ed-b647-4e16-9331-27380c1dc1b2/resourceGroups/rg-databricks-prod/providers/Microsoft.Storage/storageAccounts/stunitycatalog001'
+                
+                terraform import 'module.unity_catalog.azurerm_storage_container.unity_catalog' 'https://stunitycatalog001.blob.core.windows.net/unity-catalog'
+                
+                Write-Host "Import completed (some resources may already be in state)"
+
   - stage: Plan
     displayName: 'Terraform Plan'
-    dependsOn: Validate
+    dependsOn: Import
     jobs:
       - job: Plan
         displayName: 'Plan Infrastructure Changes'

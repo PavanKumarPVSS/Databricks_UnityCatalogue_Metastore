@@ -22,7 +22,7 @@ module "unity_catalog" {
 
   access_connector_name = "databricks-access-connector"
   resource_group_name   = "my-resource-group"
-  location              = "East US"
+  location              = "Canada Central"
   storage_account_name  = "unitycatalogstore123"
   container_name        = "unity-catalog"
 

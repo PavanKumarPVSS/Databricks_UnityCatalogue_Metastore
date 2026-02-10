@@ -30,7 +30,7 @@ module "databricks_workspace" {
 
   workspace_name      = "my-databricks-workspace"
   resource_group_name = "my-resource-group"
-  location            = "East US"
+  location            = "Canada Central"
   sku                 = "premium"
 
   public_network_access_enabled         = false

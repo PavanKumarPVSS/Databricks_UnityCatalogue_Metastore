@@ -14,7 +14,7 @@ module "resource_group" {
   source = "./modules/resource_group"
 
   resource_group_name = "my-resource-group"
-  location            = "East US"
+  location            = "Canada Central"
 
   tags = {
     environment = "production"

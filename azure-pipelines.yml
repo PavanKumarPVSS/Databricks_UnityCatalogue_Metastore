@@ -4,11 +4,9 @@ pool:
   name: 'Agent'
 
 variables:
-  - name: terraformVersion
-    value: '1.7.0'
   - name: workingDirectory
     value: '$(System.DefaultWorkingDirectory)'
-  - name: serviceConnectionName
+  - name: azureSubscription
     value: 'Azure-Service-Connection'
   - group: 'TFstate-variables -Databricks_deployment'
 
@@ -19,29 +17,29 @@ stages:
       - job: Validate
         displayName: 'Validate Terraform Configuration'
         steps:
-          - task: TerraformInstaller@1
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: '$(terraformVersion)'
-
-          - task: TerraformTaskV4@4
+          - task: AzureCLI@2
             displayName: 'Terraform Init'
             inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: '$(workingDirectory)'
-              backendServiceArm: '$(serviceConnectionName)'
-              backendAzureRmResourceGroupName: '$(tfstate_resource_group_name)'
-              backendAzureRmStorageAccountName: '$(tfstate_storage_account_name)'
-              backendAzureRmContainerName: '$(tfstate_container_name)'
-              backendAzureRmKey: '$(tfstate_key)'
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'ps'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd $(workingDirectory)
+                terraform init `
+                  -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
+                  -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
+                  -backend-config="container_name=$(tfstate_container_name)" `
+                  -backend-config="key=$(tfstate_key)"
 
-          - task: TerraformTaskV4@4
+          - task: AzureCLI@2
             displayName: 'Terraform Validate'
             inputs:
-              provider: 'azurerm'
-              command: 'validate'
-              workingDirectory: '$(workingDirectory)'
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'ps'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd $(workingDirectory)
+                terraform validate
 
   - stage: Plan
     displayName: 'Terraform Plan'
@@ -50,31 +48,29 @@ stages:
       - job: Plan
         displayName: 'Plan Infrastructure Changes'
         steps:
-          - task: TerraformInstaller@1
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: '$(terraformVersion)'
-
-          - task: TerraformTaskV4@4
+          - task: AzureCLI@2
             displayName: 'Terraform Init'
             inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: '$(workingDirectory)'
-              backendServiceArm: '$(serviceConnectionName)'
-              backendAzureRmResourceGroupName: '$(tfstate_resource_group_name)'
-              backendAzureRmStorageAccountName: '$(tfstate_storage_account_name)'
-              backendAzureRmContainerName: '$(tfstate_container_name)'
-              backendAzureRmKey: '$(tfstate_key)'
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'ps'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd $(workingDirectory)
+                terraform init `
+                  -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
+                  -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
+                  -backend-config="container_name=$(tfstate_container_name)" `
+                  -backend-config="key=$(tfstate_key)"
 
-          - task: TerraformTaskV4@4
+          - task: AzureCLI@2
             displayName: 'Terraform Plan'
             inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(workingDirectory)'
-              environmentServiceNameAzureRM: '$(serviceConnectionName)'
-              commandOptions: '-out=tfplan'
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'ps'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd $(workingDirectory)
+                terraform plan -out=tfplan
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Terraform Plan'
@@ -86,7 +82,6 @@ stages:
   - stage: Apply
     displayName: 'Terraform Apply'
     dependsOn: Plan
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     jobs:
       - deployment: Apply
         displayName: 'Apply Infrastructure Changes'
@@ -97,34 +92,32 @@ stages:
               steps:
                 - checkout: self
 
-                - task: TerraformInstaller@1
-                  displayName: 'Install Terraform'
-                  inputs:
-                    terraformVersion: '$(terraformVersion)'
-
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Download Terraform Plan'
                   inputs:
                     artifact: 'tfplan'
-                    path: '$(workingDirectory)'
+                    path: $(workingDirectory)
 
-                - task: TerraformTaskV4@4
+                - task: AzureCLI@2
                   displayName: 'Terraform Init'
                   inputs:
-                    provider: 'azurerm'
-                    command: 'init'
-                    workingDirectory: '$(workingDirectory)'
-                    backendServiceArm: '$(serviceConnectionName)'
-                    backendAzureRmResourceGroupName: '$(tfstate_resource_group_name)'
-                    backendAzureRmStorageAccountName: '$(tfstate_storage_account_name)'
-                    backendAzureRmContainerName: '$(tfstate_container_name)'
-                    backendAzureRmKey: '$(tfstate_key)'
+                    azureSubscription: '$(azureSubscription)'
+                    scriptType: 'ps'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd $(workingDirectory)
+                      terraform init `
+                        -backend-config="resource_group_name=$(tfstate_resource_group_name)" `
+                        -backend-config="storage_account_name=$(tfstate_storage_account_name)" `
+                        -backend-config="container_name=$(tfstate_container_name)" `
+                        -backend-config="key=$(tfstate_key)"
 
-                - task: TerraformTaskV4@4
+                - task: AzureCLI@2
                   displayName: 'Terraform Apply'
                   inputs:
-                    provider: 'azurerm'
-                    command: 'apply'
-                    workingDirectory: '$(workingDirectory)'
-                    environmentServiceNameAzureRM: '$(serviceConnectionName)'
-                    commandOptions: 'tfplan'
+                    azureSubscription: '$(azureSubscription)'
+                    scriptType: 'ps'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd $(workingDirectory)
+                      terraform apply -auto-approve tfplan

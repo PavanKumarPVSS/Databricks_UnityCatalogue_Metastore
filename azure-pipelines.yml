@@ -1,15 +1,5 @@
 trigger: none
 
-parameters:
-  - name: environment
-    displayName: 'Environment to Plan'
-    type: string
-    default: 'development'
-    values:
-      - development
-      - qa
-      - both
-
 pool:
   name: 'Agent'
 

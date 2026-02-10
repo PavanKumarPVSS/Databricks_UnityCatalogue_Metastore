@@ -20,7 +20,7 @@ module "vnet" {
   source = "./modules/vnet"
 
   vnet_name           = "my-vnet"
-  location            = "East US"
+  location            = "Canada Central"
   resource_group_name = "my-resource-group"
   address_space       = ["10.0.0.0/16"]
 

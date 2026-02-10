@@ -26,7 +26,7 @@ module "storage_account" {
 
   storage_account_name = "mystorageacct123"
   resource_group_name  = "my-resource-group"
-  location             = "East US"
+  location             = "Canada Central"
   account_tier         = "Standard"
   replication_type     = "LRS"
   account_kind         = "StorageV2"
@@ -45,7 +45,7 @@ module "storage_account" {
 
   storage_account_name = "mystorageacct123"
   resource_group_name  = "my-resource-group"
-  location             = "East US"
+  location             = "Canada Central"
   account_tier         = "Standard"
   replication_type     = "GRS"
 

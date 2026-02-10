@@ -1,7 +1,7 @@
 # ========================================
 # General Configuration
 # ========================================
-location = "East US"
+location = "Canada Central"
 
 tags = {
   Environment = "Development"

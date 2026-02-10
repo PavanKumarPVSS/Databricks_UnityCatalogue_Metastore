@@ -28,7 +28,7 @@ private_subnet_prefix = ["10.0.2.0/24"]
 # ========================================
 # Storage Account
 # ========================================
-storage_account_name                    = "stdbprod20260210"
+storage_account_name                    = "stgdatabricksprod"
 storage_account_tier                    = "Standard"
 storage_replication_type                = "LRS"
 storage_account_kind                    = "StorageV2"

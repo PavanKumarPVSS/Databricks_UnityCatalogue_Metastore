@@ -59,8 +59,8 @@ storage_containers = {
 }
 
 # Example queues, tables, and file shares
-storage_queues = []
-storage_tables = []
+storage_queues      = []
+storage_tables      = []
 storage_file_shares = {}
 
 # ========================================
